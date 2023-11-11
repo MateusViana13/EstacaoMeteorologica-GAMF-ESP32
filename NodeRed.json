@@ -1,0 +1,66 @@
+[
+    {
+        "id": "4bb91f8b8f3bd535",
+        "type": "ui_chart",
+        "z": "cda5941e9d75e739",
+        "name": "",
+        "group": "383719ef0d455432",
+        "order": 15,
+        "width": 6,
+        "height": 6,
+        "label": "Luminosidade [lux]",
+        "chartType": "line",
+        "legend": "false",
+        "xformat": "HH:mm:ss",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "0",
+        "ymax": "1000",
+        "removeOlder": "5",
+        "removeOlderPoints": "",
+        "removeOlderUnit": "60",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#ff2600",
+            "#aec7e8",
+            "#ff7f0e",
+            "#ff2600",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 930,
+        "y": 420,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "383719ef0d455432",
+        "type": "ui_group",
+        "name": "Leituras",
+        "tab": "c3e6e190677ce58d",
+        "order": 1,
+        "disp": true,
+        "width": 30,
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "c3e6e190677ce58d",
+        "type": "ui_tab",
+        "name": "Data Logger Serial",
+        "icon": "dashboard",
+        "order": 1,
+        "disabled": false,
+        "hidden": false
+    }
+]
