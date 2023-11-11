@@ -50,6 +50,10 @@ bool EstadoAnteriorEncoder = LOW; // Estado anterior do pino do encoder
 bool EstadoAtualEncoder = LOW;    // Estado atual do pino do encoder
 int ContadorPulsos = 0;           // Contador de pulsos do encoder
 
+const int NumeroAmostras = 5;
+float LeiturasAnteriores[NumeroAmostras] = {0};
+float MediaMovel = 0;
+
 void setup()
 {
     Serial.begin(115200); // Inicia a comunicação serial com uma taxa de 115200 bauds
@@ -82,7 +86,8 @@ void loop()
 
     if (TimerLeituras[1].isReady()) // Verifica se é hora de fazer a leitura do Encoder (RPM)
     {
-        Valores[1] = ((ContadorPulsos * 6)) * 1000.00 / IntervalosLeitura[1];       // Calcula a velocidade em RPM a partir dos pulsos contados no intervalo de tempo
+       // Valores[1] = ((ContadorPulsos * 6)) * 1000.00 / IntervalosLeitura[1];       // Calcula a velocidade em RPM a partir dos pulsos contados no intervalo de tempo
+        Valores[1] = ((CalculaMediaMovel(ContadorPulsos) * 6)) * 1000.00 / IntervalosLeitura[1];
         ContadorPulsos = 0;                                                         // Zera o contador de pulsos para a próxima contagem
         AtualizaSensorPercentual(Valores[1], ValoresAnteriores[1], Percentuais[0]); // Atualiza o valor anterior da velocidade se a variação for maior que o percentual definido
         TimerLeituras[1].reset();                                                   // Reseta o temporizador
@@ -190,6 +195,27 @@ void ControleDirecaoMotor(String valorDirecaoVento, float valorEncoder){
         if(valorDirecaoVento == "S")
             servoMotor.write(0);  
     //}
+}
+
+float CalculaMediaMovel(float novoValor)
+{
+    // Atualiza o array de leituras anteriores
+    for (int i = NumeroAmostras - 1; i > 0; i--)
+    {
+        LeiturasAnteriores[i] = LeiturasAnteriores[i - 1];
+    }
+    LeiturasAnteriores[0] = novoValor;
+
+    // Calcula a média móvel
+    float soma = 0;
+    for (int i = 0; i < NumeroAmostras; i++)
+    {
+        soma += LeiturasAnteriores[i];
+    }
+
+    MediaMovel = soma / NumeroAmostras;
+
+    return MediaMovel;
 }
 
 void AtualizaSensorPercentual(float valorAtual, float &valorAnterior, float percentual)
