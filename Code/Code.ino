@@ -5,6 +5,10 @@
 #include <SimpleTimer.h>
 #include <Wire.h>
 #include <ESP32Servo.h>
+#include "SSD1306Wire.h" 
+#include <SPI.h>
+//#include "images.h"
+
 // Definindo o pino para o encoder
 #define PINO_ENCODER 35
 
@@ -18,15 +22,18 @@ DHT sensorUmidade(32, DHT11); // Sensor de Umidade (DHT11)
 Servo servoMotor;
 #define PINO_MOTOR 14
 
+//BOMBA D'AGUA
+#define PINO_WATERPUMP 17
+
 SimpleTimer TimerLeituras[6]; // Array de temporizadores para leituras
 
-int IntervalosLeitura[6] = {2000, 2000, 3000, 5000, 6000, 3000};
+int IntervalosLeitura[6] = {2000, 2000, 3000, 5000, 40000, 3000};
 // Intervalos de leitura para cada sensor em milissegundos
 // INDEX 0: Direção do Vento - 2s
 // INDEX 1: Encoder (RPM) - 2s
 // INDEX 2: Luminosidade - 3s
 // INDEX 3: Pressão/Temperatura - 5s
-// INDEX 4: Umidade - 6s
+// INDEX 4: Umidade - 40s
 // INDEX 5: JSON (Node-Red) - 3s
 
 float Percentuais[5] = {2, 10, 2, 1, 5};
@@ -54,10 +61,21 @@ const int NumeroAmostras = 5;
 float LeiturasAnteriores[NumeroAmostras] = {0};
 float MediaMovel = 0;
 
+//DISPLAY
+SSD1306Wire display(0x3c, 25, 26);   // ADDRESS, SDA, SCL 
+typedef void (*Demo)(void);
+
 void setup()
 {
     Serial.begin(115200); // Inicia a comunicação serial com uma taxa de 115200 bauds
+    
     Wire.begin();         // Inicia a comunicação I2C (protocolo de comunicação) para sensores que utilizam o protocolo I2C
+    display.init();
+
+    display.flipScreenVertically();
+    display.setFont(ArialMT_Plain_10);
+
+    //Wire.begin();
 
     pinMode(PINO_ENCODER, INPUT);                       // Define o pino do encoder como entrada
     sensorBMP.begin(0x76);                              // Inicia o sensor BMP280 com o endereço 0x76
@@ -65,16 +83,63 @@ void setup()
     sensorDirecaoVento.setDirection(AS5600_CLOCK_WISE); // Configura a direção do sensor AS5600 como horário (clockwise)
     sensorLuminosidade.begin();                         // Inicia o sensor de luminosidade
     sensorUmidade.begin();                              // Inicia o sensor de umidade (DHT11)
+    
     servoMotor.attach(PINO_MOTOR);
-
     servoMotor.write(0);
+
+    pinMode(PINO_WATERPUMP, OUTPUT);
+
+
 
     for (int i = 0; i < 6; i++) // Configura os intervalos de leitura para cada sensor
         TimerLeituras[i].setInterval(IntervalosLeitura[i]);
 }
 
+
+// void drawValoresSensores() {
+//     display.clear();
+//     display.setTextAlignment(TEXT_ALIGN_LEFT);
+//     display.setFont(ArialMT_Plain_10);
+
+//     display.drawString(0, 0, "Temperatura: ");
+
+//     // Exibe os valores dos sensores
+//     //display.drawString(0, 0, "Temperatura: " + String(Valores[4]) + " C");
+//     //display.drawString(0, 12, "Umidade: " + String(Valores[5]) + " %");
+//     //display.drawString(0, 24, "Luminosidade: " + String(Valores[2]) + " lux");
+//     //display.drawString(0, 36, "Pressão: " + String(Valores[3]) + " hPa");
+ 
+//     display.display();
+// }
+
+// void drawDadosVento() {
+//     display.clear();
+//     display.setTextAlignment(TEXT_ALIGN_LEFT);
+//     display.setFont(ArialMT_Plain_10);
+
+//     // Exibe os dados relacionados ao vento
+//     display.drawString(0, 0, "Direção do Vento: " + DirecaoVento(Valores[0]));
+//     display.drawString(0, 12, "Velocidade do Vento: " + String(Valores[1]) + " RPM");
+
+//     display.display();
+// }
+
+// Demo demos[] = { drawValoresSensores };
+
 void loop()
 {
+   // display.clear();
+   //   // draw the current demo method
+
+
+   //   display.setFont(ArialMT_Plain_10);
+   //   display.setTextAlignment(TEXT_ALIGN_RIGHT);
+   //   display.drawString(128, 54, String(millis()));
+   //   // write the buffer to the display
+   //   display.display();
+
+   //   delay(10);
+
     if (TimerLeituras[0].isReady()) // Verifica se é hora de fazer a leitura da Direção do Vento
     {
         //servoMotor.write(180);
@@ -113,6 +178,9 @@ void loop()
     if (TimerLeituras[4].isReady()) // Verifica se é hora de fazer a leitura da Umidade
     {
         Valores[5] = sensorUmidade.readHumidity();                                  // Lê o nível de umidade do sensor DHT11
+        if(Valores[5] <= 40){
+          LigarBomba();
+        }
         AtualizaSensorPercentual(Valores[5], ValoresAnteriores[5], Percentuais[4]); // Atualiza o valor anterior da umidade se a variação for maior que o percentual definido
         TimerLeituras[4].reset();                                                   // Reseta o temporizador
     }
@@ -137,6 +205,11 @@ void loop()
         Serial.print(",\"DirecaoVento\":\"");
         Serial.print(DirecaoVento(Valores[0]));
         Serial.println("\"}");
+        // display.setFont(ArialMT_Plain_10);
+        // display.setTextAlignment(TEXT_ALIGN_RIGHT);
+        // display.drawString(128, 54, String(millis()));
+        // display.display();
+
         TimerLeituras[5].reset(); // Reseta o temporizador
     }
 
@@ -174,26 +247,32 @@ String DirecaoVento(int Valor)
     return Direcao;     // Retorna a string que representa a direção do vento
 }
 
+void LigarBomba(){
+   digitalWrite(PINO_WATERPUMP, HIGH);
+   delay(10000);
+   digitalWrite(PINO_WATERPUMP, LOW);
+}
+
 void ControleDirecaoMotor(String valorDirecaoVento, float valorEncoder){
     //if(valorEncoder > 100){
 
        if(valorDirecaoVento == "L" || valorDirecaoVento == "SE")
-            servoMotor.write(0); 
+            servoMotor.write(180); 
  
        if(valorDirecaoVento == "NE")
-            servoMotor.write(45); 
+            servoMotor.write(0); 
 
         if(valorDirecaoVento == "N")
-            servoMotor.write(90);  
+            servoMotor.write(0);  
 
         if(valorDirecaoVento == "NO")
-            servoMotor.write(135);  
+            servoMotor.write(0);  
         
-        if(valorDirecaoVento == "O" || valorDirecaoVento == "SO")
+        if(valorDirecaoVento == "O")
             servoMotor.write(180); 
 
-        if(valorDirecaoVento == "S")
-            servoMotor.write(0);  
+        if(valorDirecaoVento == "S0")
+            servoMotor.write(90);  
     //}
 }
 
