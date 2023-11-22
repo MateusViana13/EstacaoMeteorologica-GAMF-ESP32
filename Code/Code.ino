@@ -75,8 +75,6 @@ void setup()
     display.flipScreenVertically();
     display.setFont(ArialMT_Plain_10);
 
-    //Wire.begin();
-
     pinMode(PINO_ENCODER, INPUT);                       // Define o pino do encoder como entrada
     sensorBMP.begin(0x76);                              // Inicia o sensor BMP280 com o endereço 0x76
     sensorDirecaoVento.begin(4);                        // Inicia o sensor de direção do vento no pino 4
@@ -89,57 +87,12 @@ void setup()
 
     pinMode(PINO_WATERPUMP, OUTPUT);
 
-
-
     for (int i = 0; i < 6; i++) // Configura os intervalos de leitura para cada sensor
         TimerLeituras[i].setInterval(IntervalosLeitura[i]);
 }
 
-
-// void drawValoresSensores() {
-//     display.clear();
-//     display.setTextAlignment(TEXT_ALIGN_LEFT);
-//     display.setFont(ArialMT_Plain_10);
-
-//     display.drawString(0, 0, "Temperatura: ");
-
-//     // Exibe os valores dos sensores
-//     //display.drawString(0, 0, "Temperatura: " + String(Valores[4]) + " C");
-//     //display.drawString(0, 12, "Umidade: " + String(Valores[5]) + " %");
-//     //display.drawString(0, 24, "Luminosidade: " + String(Valores[2]) + " lux");
-//     //display.drawString(0, 36, "Pressão: " + String(Valores[3]) + " hPa");
- 
-//     display.display();
-// }
-
-// void drawDadosVento() {
-//     display.clear();
-//     display.setTextAlignment(TEXT_ALIGN_LEFT);
-//     display.setFont(ArialMT_Plain_10);
-
-//     // Exibe os dados relacionados ao vento
-//     display.drawString(0, 0, "Direção do Vento: " + DirecaoVento(Valores[0]));
-//     display.drawString(0, 12, "Velocidade do Vento: " + String(Valores[1]) + " RPM");
-
-//     display.display();
-// }
-
-// Demo demos[] = { drawValoresSensores };
-
 void loop()
 {
-   // display.clear();
-   //   // draw the current demo method
-
-
-   //   display.setFont(ArialMT_Plain_10);
-   //   display.setTextAlignment(TEXT_ALIGN_RIGHT);
-   //   display.drawString(128, 54, String(millis()));
-   //   // write the buffer to the display
-   //   display.display();
-
-   //   delay(10);
-
     if (TimerLeituras[0].isReady()) // Verifica se é hora de fazer a leitura da Direção do Vento
     {
         //servoMotor.write(180);
@@ -205,11 +158,6 @@ void loop()
         Serial.print(",\"DirecaoVento\":\"");
         Serial.print(DirecaoVento(Valores[0]));
         Serial.println("\"}");
-        // display.setFont(ArialMT_Plain_10);
-        // display.setTextAlignment(TEXT_ALIGN_RIGHT);
-        // display.drawString(128, 54, String(millis()));
-        // display.display();
-
         TimerLeituras[5].reset(); // Reseta o temporizador
     }
 
@@ -254,7 +202,7 @@ void LigarBomba(){
 }
 
 void ControleDirecaoMotor(String valorDirecaoVento, float valorEncoder){
-    //if(valorEncoder > 100){
+    if(valorEncoder > 100){
 
        if(valorDirecaoVento == "L" || valorDirecaoVento == "SE")
             servoMotor.write(180); 
@@ -273,7 +221,7 @@ void ControleDirecaoMotor(String valorDirecaoVento, float valorEncoder){
 
         if(valorDirecaoVento == "S0")
             servoMotor.write(90);  
-    //}
+    }
 }
 
 float CalculaMediaMovel(float novoValor)
